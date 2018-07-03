@@ -97,6 +97,8 @@ struct thread
     #ifdef USERPROG
     struct file *files[MAX_FILES];      /* Array containing names of files */
     #endif
+    struct list child_list;
+    struct pc_status *parent;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
