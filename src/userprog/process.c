@@ -17,6 +17,8 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
+#include "threads/synch.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -31,7 +33,7 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
-  struct pc_status *pcs =  malloc(size_of(struct pc_status));
+  struct pc_status *pcs = malloc(sizeof(struct pc_status));
 
   sema_init(&pcs->sema_exec, 0);
 
@@ -49,7 +51,7 @@ process_execute (const char *file_name)
   pcs->f_name = fn_copy;
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (fn_copy, PRI_DEFAULT, start_process, pcs);
+  tid = thread_create(fn_copy, PRI_DEFAULT, start_process, pcs);
   if (tid == TID_ERROR) {
     free(pcs);
     palloc_free_page (fn_copy);
@@ -72,7 +74,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *pcs_)
 {
-  struct pc_status *pcs = pcs_
+  struct pc_status *pcs = pcs_;
   char *file_name = pcs->f_name;
   struct intr_frame if_;
   bool success;

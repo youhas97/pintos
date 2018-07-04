@@ -20,7 +20,6 @@ struct pc_status {
     tid_t child_id;
 
     struct list_elem elem;      //list element
-
-}
+};
 
 #endif /* userprog/process.h */

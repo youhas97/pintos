@@ -91,7 +91,7 @@ int write (int fd, const void *buffer, unsigned size){
 
 }
 
-pid_t exec (const char *cmd_line) {
+tid_t exec (const char *cmd_line) {
     return process_execute(cmd_line);
 }
 
