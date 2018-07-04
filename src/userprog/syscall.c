@@ -125,6 +125,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         case SYS_CLOSE:
             close((int)arg[1]);
             break;
+        case SYS_EXEC:
+            exec((char*)arg[1]);
+            break;
         default:
             printf ("system call! down here\n");
     }

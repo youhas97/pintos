@@ -49,18 +49,20 @@ process_execute (const char *file_name)
   pcs->f_name = fn_copy;
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, pcs);
-  if (tid == TID_ERROR)
+  tid = thread_create (fn_copy, PRI_DEFAULT, start_process, pcs);
+  if (tid == TID_ERROR) {
+    free(pcs);
     palloc_free_page (fn_copy);
-  return tid;
+  }
+  else {
+    pcs->child_id = tid;
+    sema_down(&pcs->sema_exec);
 
-  pcs->child_id = tid;
-  sema_down(&pcs->sema_exec);
+    if(!pcs->exec_success)
+      return -1;
 
-  if(!pcs->exec_success)
-    return -1;
-
-  list_push_back(&thread_current()->child_list, &pcs->elem);
+    list_push_back(&thread_current()->child_list, &pcs->elem);
+  }
   return tid;
 
 }
