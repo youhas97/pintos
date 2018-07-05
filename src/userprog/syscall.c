@@ -96,6 +96,9 @@ tid_t exec (const char *cmd_line) {
 }
 
 void exit (int status){
+    struct thread *t = thread_current();
+    t->parent_pcs->exit_status = status;
+    printf("%s: exit(%d)\n", t->name, status);
     thread_exit();
 }
 
@@ -107,6 +110,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     switch(arg[0]){
         case SYS_HALT:
             halt();
+            break;
         case SYS_EXIT:
             exit((int)arg[1]);
             break;

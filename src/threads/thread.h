@@ -10,7 +10,6 @@
   #include "userprog/syscall.h"
   #include "threads/synch.h"
 #endif
-
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -98,7 +97,7 @@ struct thread
     struct file *files[MAX_FILES];      /* Array containing names of files */
     #endif
     struct list child_list;
-    struct pc_status *parent;
+    struct pc_status *parent_pcs;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -110,6 +109,20 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+  };
+
+// parent-child relationship
+struct pc_status {
+  int alive_count;
+  int exit_status;
+
+  bool exec_success;
+  struct semaphore sema_wait;
+  struct semaphore sema_exec;
+  char *f_name;
+  tid_t child_id;
+
+  struct list_elem elem;      //list element
   };
 
 /* If false (default), use round-robin scheduler.

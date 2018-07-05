@@ -33,8 +33,7 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
-  struct pc_status *pcs = malloc(sizeof(struct pc_status));
-
+  struct pc_status *pcs = (struct pc_status*)malloc(sizeof(struct pc_status));
   sema_init(&pcs->sema_exec, 0);
 
   pcs->alive_count = 2;
@@ -60,13 +59,14 @@ process_execute (const char *file_name)
     pcs->child_id = tid;
     sema_down(&pcs->sema_exec);
 
-    if(!pcs->exec_success)
-      return -1;
+    if(!pcs->exec_success) {
+      free(pcs);
+      return TID_ERROR;
+    }
 
     list_push_back(&thread_current()->child_list, &pcs->elem);
   }
   return tid;
-
 }
 
 /* A thread function that loads a user process and starts it
@@ -90,7 +90,7 @@ start_process (void *pcs_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
 
-  thread_current()->parent = pcs;
+  thread_current()->parent_pcs = pcs;
   sema_up(&pcs->sema_exec);
   if (!success)
     thread_exit ();
@@ -126,6 +126,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  cur->parent_pcs->exit_status = -1;
   uint32_t *pd;
 
   /* Destroy the current process's page directory and switch back
@@ -144,6 +145,25 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+  struct list_elem *e;
+  for (e = list_begin(&cur->child_list);
+  e != list_end(&cur->child_list);
+  e = list_remove(e)) {
+      struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+
+      if (pcs->alive_count <= 1)
+        free(pcs);
+      else
+        pcs->alive_count -= 1;
+  }
+
+  if (cur->parent_pcs->alive_count <= 1)
+    free(cur->parent_pcs);
+  else {
+    cur->parent_pcs->alive_count -= 1;
+  }
+  cur->parent_pcs->exit_status = 0;
 }
 
 /* Sets up the CPU for running user code in the current
