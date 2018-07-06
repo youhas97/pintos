@@ -293,6 +293,60 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   }
 
+
+  char *fn_copy;
+  char *argv[32];
+  char *addr[32];
+
+  char *token, *save_ptr;
+
+  int arg_num = 0;
+  for (token = strtok_r(fn_copy, " ", &save_ptr); token != NULL;
+       token = strtok_r(NULL, " ", &save_ptr)) {
+           argv[arg_num] = token;
+           ++arg_num;
+       }
+
+       
+
+
+/*
+  int j;
+  --(*esp);
+  // we want argv[argc] to be NULL, hence arg_num-1
+  for(j = arg_num-1; j>=0; --j) {
+      *((char*)*esp) = '\0';
+      //move pointer back to beginning of arg
+      *esp -= strlen(argv[j]);
+      //map pointer to word
+      memcpy(*esp, argv[j], strlen(argv[j]));
+      addr[j] = *esp;
+      --(*esp);
+  }
+
+  //start in new space
+  *esp -= 3;
+  *esp -= (unsigned)*esp%4;
+  *((char**)*esp) = NULL;
+  *esp -= 4;
+
+  for (j = arg_num-1; j>=0; --j) {
+      //put argument address on stack
+      *((char**)*esp) = addr[j];
+      *esp -= 4;
+  }
+
+  *((char**)*esp) = (char*)*esp + 4;
+  *esp -= 4;
+
+  *((int*)*esp) = arg_num;
+  *esp -= 4;
+
+  *((void**)*esp) = NULL;
+  file_name = argv[0];
+*/
+
+
    /* Uncomment the following line to print some debug
      information. This will be useful when you debug the program
      stack.*/
@@ -543,7 +597,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }
