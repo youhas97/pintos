@@ -102,6 +102,10 @@ void exit (int status){
     thread_exit();
 }
 
+int wait (tid_t pid) {
+    return process_wait(pid);
+}
+
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
@@ -132,6 +136,8 @@ syscall_handler (struct intr_frame *f UNUSED)
         case SYS_EXEC:
             exec((char*)arg[1]);
             break;
+        case SYS_WAIT:
+            wait((tid_t)arg[1]);
         default:
             printf ("system call! down here\n");
     }

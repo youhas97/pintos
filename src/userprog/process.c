@@ -35,6 +35,7 @@ process_execute (const char *file_name)
 
   struct pc_status *pcs = (struct pc_status*)malloc(sizeof(struct pc_status));
   sema_init(&pcs->sema_exec, 0);
+  sema_init(&pcs->sema_wait, 0);
 
   pcs->alive_count = 2;
 
@@ -117,8 +118,23 @@ start_process (void *pcs_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-  while (true);
-  return -1;
+    struct thread *t = thread_current();
+    struct list_elem *e;
+    for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
+        struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+        if (pcs->child_id = child_tid) {
+             if (pcs->alive_count == 2) {
+                sema_down(&pcs->sema_wait);
+             }
+             int exit_status = pcs->exit_status;
+             list_remove(e);
+             free(pcs);
+             return exit_status;
+        }
+        e = list_next(e);
+    }
+
+    return -1;
 }
 
 /* Free the current process's resources. */
@@ -161,6 +177,7 @@ process_exit (void)
   if (cur->parent_pcs->alive_count <= 1)
     free(cur->parent_pcs);
   else {
+    sema_up(&cur->parent_pcs->sema_wait);
     cur->parent_pcs->alive_count -= 1;
   }
   cur->parent_pcs->exit_status = 0;
