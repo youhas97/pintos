@@ -294,63 +294,63 @@ load (const char *file_name, void (**eip) (void), void **esp)
   }
 
 
-  char *fn_copy;
+
+  /*
+  The strtok_r() function is a reentrant version strtok(). The saveptr
+  argument is a pointer to a char * variable that is used internally by
+  strtok_r() in order to maintain context between successive calls that
+  parse the same string.
+
+  On the first call to strtok_r(), str should point to the string to be
+  parsed, and the value of saveptr is ignored. In subsequent calls, str
+  should be NULL, and saveptr should be unchanged since the previous call.
+
+  **Copied from strtok_r documentation in c**
+  */
+
+
+  char *s, *token, *save_ptr;
   char *argv[32];
   char *addr[32];
 
-  char *token, *save_ptr;
+  strlcpy(s, file_name, PGSIZE);
 
   int arg_num = 0;
-  for (token = strtok_r(fn_copy, " ", &save_ptr); token != NULL;
+  for (token = strtok_r(s, " ", &save_ptr); token != NULL;
        token = strtok_r(NULL, " ", &save_ptr)) {
            argv[arg_num] = token;
            ++arg_num;
        }
 
-       
-
-
-/*
   int j;
-  --(*esp);
-  // we want argv[argc] to be NULL, hence arg_num-1
-  for(j = arg_num-1; j>=0; --j) {
-      *((char*)*esp) = '\0';
-      //move pointer back to beginning of arg
-      *esp -= strlen(argv[j]);
-      //map pointer to word
-      memcpy(*esp, argv[j], strlen(argv[j]));
+  *esp -= 4;                          // stack starts 1 page below PHYS_BASE
+  for (j = arg_num-1; j < 0; --j) {
+      *((char*)*esp) = argv[j];       //push argv[j] on stack
       addr[j] = *esp;
-      --(*esp);
+      *esp -= strlen(argv[j]);        //go to next empty addr on stack
+
   }
 
-  //start in new space
-  *esp -= 3;
-  *esp -= (unsigned)*esp%4;
-  *((char**)*esp) = NULL;
-  *esp -= 4;
-
-  for (j = arg_num-1; j>=0; --j) {
-      //put argument address on stack
-      *((char**)*esp) = addr[j];
-      *esp -= 4;
+  while(!*esp%4) --*esp;              //word align
+  *esp -= 4;                          //start next segment 1 page below last one
+  *((char*)*esp) = NULL;              //argv[argc] == NULL
+  for (j = arg_num-1; j < 0; --j) {
+      *((char**)*esp) = addr[j];      //push addr[j] on stack
+      *esp -= 4;                      //go to next empty addr on stack
   }
+  *((char**)*esp) = (char*)*esp + 4;  //push argv start addr on stack
 
-  *((char**)*esp) = (char*)*esp + 4;
   *esp -= 4;
+  *((int*)*esp) = arg_num;            //push arg_num (argc) on stack
 
-  *((int*)*esp) = arg_num;
-  *esp -= 4;
-
-  *((void**)*esp) = NULL;
-  file_name = argv[0];
-*/
-
+  *((void**)*esp) = NULL;             //push return addr on stack
+  file_name = argv[0];                //set file_name
 
    /* Uncomment the following line to print some debug
      information. This will be useful when you debug the program
      stack.*/
-/*#define STACK_DEBUG*/
+
+//#define STACK_DEBUG
 
 #ifdef STACK_DEBUG
   printf("*esp is %p\nstack contents:\n", *esp);
