@@ -93,29 +93,10 @@ int write (int fd, const void *buffer, unsigned size){
 
 }
 
-tid_t exec (const char *cmd_line) {
-    if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
-        return process_execute(cmd_line);
-    exit(-1);
-    return -1;
-}
-
-void exit (int status){
-    struct thread *t = thread_current();
-    t->parent_pcs->exit_status = status;
-    printf("%s: exit(%d)\n", t->name, status);
-    thread_exit();
-}
-
-int wait (tid_t pid) {
-    return process_wait(pid);
-}
-
-
 static bool
 is_valid_ptr(const void *p) {
-  struct thread *current_thread = thread_current();
-  bool result = (p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(current_thread->pagedir, p) != NULL));
+  struct thread *t = thread_current();
+  bool result = (p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(t->pagedir, p) != NULL));
   return result;
 
 }
@@ -145,6 +126,25 @@ is_valid_buf(const void *buf, size_t size) {
   }
   return true;
 }
+
+tid_t exec (const char *cmd_line) {
+    if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
+        return process_execute(cmd_line);
+    exit(-1);
+    return -1;
+}
+
+void exit (int status){
+    struct thread *t = thread_current();
+    t->parent_pcs->exit_status = status;
+    printf("%s: exit(%d)\n", t->name, status);
+    thread_exit();
+}
+
+int wait (tid_t pid) {
+    return process_wait(pid);
+}
+
 
 static void
 syscall_handler (struct intr_frame *f UNUSED)
