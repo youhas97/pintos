@@ -325,23 +325,17 @@ load (const char *file_name, void (**eip) (void), void **esp)
        }
 
   int j;
-  --(*esp);                           //stack starts below PHYS_BASE
+  *esp -= 4;                          // stack starts 1 page below PHYS_BASE
   for (j = arg_num-1; j >= 0; --j) {
-      *((char*)*esp) = '\0';          //**esp -> *esp -> esp = "\0"
+      *((char**)(*esp)) = argv[j];    //push argv[j] on stack
+      addr[j] = *esp;                 //save addr of argv[j]
+      *esp -= strlen(argv[j]);        //go to next empty addr on stack
 
-      /* Go to end of argument, memcpy copies
-      upwards and we want to go downwards */
-      *esp -= strlen(argv[j]);
-      memcpy(*esp, argv[j], strlen(argv[j]));
-
-      addr[j] = *esp;                 //save mem addr of argv[j]
-      --(*esp);                       //dec pointer to prepare for the next arg
   }
 
   while(!*esp%4) --*esp;              //word align
   *esp -= 4;                          //start next segment 1 page below last one
-  *((char**)(*esp)) = NULL;           //argv[argc] == NULL
-
+  *((char**)(*esp)) = "\0";           //argv[argc] == NULL
   for (j = arg_num-1; j >= 0; --j) {
       *((char**)*esp) = addr[j];      //push addr[j] on stack
       *esp -= 4;                      //go to next empty addr on stack
