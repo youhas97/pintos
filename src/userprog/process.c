@@ -171,12 +171,13 @@ process_exit (void)
         pcs->alive_count -= 1;
   }
 
+  sema_up(&cur->parent_pcs->sema_wait);
   if (cur->parent_pcs->alive_count <= 1)
     free(cur->parent_pcs);
-  else
+  else {
     cur->parent_pcs->alive_count -= 1;
+  }
 
-  sema_up(&cur->parent_pcs->sema_wait);
   cur->parent_pcs->exit_status = 0;
 }
 
