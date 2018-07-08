@@ -118,8 +118,9 @@ struct pc_status {
   int exit_status;
 
   bool exec_success;
-  struct semaphore sema_wait;
-  struct semaphore sema_exec;
+  struct lock exit_lock;            //used when checking alive count
+  struct semaphore sema_wait;       //used when waiting for child to terminate
+  struct semaphore sema_exec;       //used when waiting for child to execute
   char *f_name;
   tid_t child_id;
 

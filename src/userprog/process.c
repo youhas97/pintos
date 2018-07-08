@@ -144,7 +144,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
-  cur->parent_pcs->exit_status = -1;
+  //cur->parent_pcs->exit_status = -1;
   uint32_t *pd;
 
   /* Destroy the current process's page directory and switch back
@@ -164,6 +164,7 @@ process_exit (void)
       pagedir_destroy (pd);
     }
 
+  /*
   struct list_elem *e;
   for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
        e = list_remove(e)) {
@@ -183,6 +184,7 @@ process_exit (void)
   }
 
   cur->parent_pcs->exit_status = 0;
+  */
 }
 
 /* Sets up the CPU for running user code in the current

@@ -47,7 +47,7 @@ static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
 
 /* Scheduling. */
-#define TIME_SLICE 4            /* # of timer ticks to give each thread. */
+#define TIME_SLICE 1            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
 /* If false (default), use round-robin scheduler.
@@ -174,8 +174,18 @@ thread_create (const char *name, int priority,
   if (t == NULL)
     return TID_ERROR;
 
+  char *s;
+
+  s = palloc_get_page(0);
+  if (s == NULL)
+    return TID_ERROR;
+
+  char *token, *save_ptr;
+  strlcpy(s, name, PGSIZE);
+  token = strtok_r(s, " ", &save_ptr);
+
   /* Initialize thread. */
-  init_thread (t, name, priority);
+  init_thread (t, token, priority);
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -275,6 +285,36 @@ void
 thread_exit (void)
 {
   ASSERT (!intr_context ());
+
+  struct thread *t = thread_current();
+  struct list_elem *e;
+
+  /* free pcs for children */
+  if (!list_empty(&t->child_list)) {
+      for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
+           e = list_remove(e)) {
+          struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+          if (pcs) {
+              lock_acquire(&pcs->exit_lock);
+              if (--(pcs->alive_count) == 0)
+                  free(pcs);
+              lock_release(&pcs->exit_lock);
+          }
+      }
+  }
+
+  /* free the parent pcs */
+  if(t->parent_pcs) {
+      lock_acquire(&t->parent_pcs->exit_lock);
+      if (--(t->parent_pcs->alive_count) == 0) {
+          sema_up(&t->parent_pcs->sema_wait);
+          free(t->parent_pcs);
+      }
+      else {
+          sema_up(&t->parent_pcs->sema_wait);
+      }
+      lock_release(&t->parent_pcs->exit_lock);
+  }
 
 #ifdef USERPROG
     int fd ;
