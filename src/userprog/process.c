@@ -388,7 +388,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     else
       printf(" \t");
     // ... and 32-bit aligned content
-    if(i % 4 == 0) {
+    if(i % 4 == 0) {	
       uint32_t *wt_uint32 = (uint32_t *)(ptr_save - i);
       printf("%x\t", *wt_uint32);
       printf("\n-------");
