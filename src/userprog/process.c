@@ -121,8 +121,8 @@ start_process (void *pcs_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
+    struct thread *t = thread_current();
     if (!list_empty(&t->child_list)) {
-        struct thread *t = thread_current();
         struct list_elem *e;
         for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
             struct pc_status *pcs = list_entry(e, struct pc_status, elem);
