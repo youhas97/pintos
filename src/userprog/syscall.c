@@ -6,6 +6,8 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "filesys/inode.h"
+#include "userprog/pagedir.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -92,7 +94,10 @@ int write (int fd, const void *buffer, unsigned size){
 }
 
 tid_t exec (const char *cmd_line) {
-    return process_execute(cmd_line);
+    if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
+        return process_execute(cmd_line);
+    exit(-1);
+    return -1;
 }
 
 void exit (int status){
@@ -104,6 +109,41 @@ void exit (int status){
 
 int wait (tid_t pid) {
     return process_wait(pid);
+}
+
+
+static bool
+is_valid_ptr(const void *p) {
+  struct thread *current_thread = thread_current();
+  bool result = (p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(current_thread->pagedir, p) != NULL));
+  return result;
+
+}
+
+static bool
+is_valid_str(const char *s) {
+
+  char letter = *s;
+  int i = 0;
+  bool result = true;
+
+  while(letter != '\0') {
+    if (is_valid_ptr(s + i))
+	   letter = *(s + i++);
+    else
+	   result = false;
+    return result;
+  }
+}
+
+static bool
+is_valid_buf(const void *buf, size_t size) {
+  unsigned i;
+  for (i = 0; i <= size; ++i) {
+    if(!is_valid_ptr(buf + i))
+      return false;
+  }
+  return true;
 }
 
 static void
