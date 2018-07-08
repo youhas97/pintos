@@ -311,7 +311,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   char *argv[32];
   char *addr[32];
 
-  s = palloc_get_page (0);
+  s = palloc_get_page(0);
   if (s == NULL)
     goto done;
   strlcpy(s, file_name, PGSIZE);
@@ -338,7 +338,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       --(*esp);                       //dec pointer to prepare for the next arg
   }
 
-  while(!*esp%4) --*esp;              //word align
+  while((int)(*esp)%4 != 0) --*esp;   //word align
   *esp -= 4;                          //start next segment 1 page below last one
   *((char**)(*esp)) = NULL;           //argv[argc] == NULL
 
@@ -351,6 +351,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *esp -= 4;
   *((int*)*esp) = arg_num;            //push arg_num (argc) on stack
 
+  *esp -= 4;
   *((void**)*esp) = NULL;             //push return addr on stack
   file_name = argv[0];                //set file_name
 
@@ -481,6 +482,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  palloc_free_page(s);
   return success;
 }
 
