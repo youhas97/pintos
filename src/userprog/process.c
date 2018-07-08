@@ -39,8 +39,6 @@ process_execute (const char *file_name)
 
   pcs->alive_count = 2;
 
-  struct list_elem *e = &pcs->elem;
-
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -122,7 +120,7 @@ process_wait (tid_t child_tid UNUSED)
     struct list_elem *e;
     for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
         struct pc_status *pcs = list_entry(e, struct pc_status, elem);
-        if (pcs->child_id = child_tid) {
+        if (pcs->child_id == child_tid) {
              if (pcs->alive_count == 2) {
                 sema_down(&pcs->sema_wait);
              }
@@ -313,8 +311,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
   char *argv[32];
   char *addr[32];
 
+  s = palloc_get_page (0);
   strlcpy(s, file_name, PGSIZE);
 
+  //tokenize the string and save each token as an argument
   int arg_num = 0;
   for (token = strtok_r(s, " ", &save_ptr); token != NULL;
        token = strtok_r(NULL, " ", &save_ptr)) {
@@ -325,15 +325,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
   int j;
   *esp -= 4;                          // stack starts 1 page below PHYS_BASE
   for (j = arg_num-1; j < 0; --j) {
-      *((char*)*esp) = argv[j];       //push argv[j] on stack
-      addr[j] = *esp;
+      *((char**)(*esp)) = argv[j];    //push argv[j] on stack
+      addr[j] = *esp;                 //save addr of argv[j]
       *esp -= strlen(argv[j]);        //go to next empty addr on stack
 
   }
 
   while(!*esp%4) --*esp;              //word align
   *esp -= 4;                          //start next segment 1 page below last one
-  *((char*)*esp) = NULL;              //argv[argc] == NULL
+  *((char**)(*esp)) = "\0";              //argv[argc] == NULL
   for (j = arg_num-1; j < 0; --j) {
       *((char**)*esp) = addr[j];      //push addr[j] on stack
       *esp -= 4;                      //go to next empty addr on stack
@@ -350,7 +350,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
      information. This will be useful when you debug the program
      stack.*/
 
-//#define STACK_DEBUG
+#define STACK_DEBUG
 
 #ifdef STACK_DEBUG
   printf("*esp is %p\nstack contents:\n", *esp);
