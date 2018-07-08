@@ -121,22 +121,21 @@ start_process (void *pcs_)
 int
 process_wait (tid_t child_tid UNUSED)
 {
-    struct thread *t = thread_current();
-    struct list_elem *e;
-    for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
-        struct pc_status *pcs = list_entry(e, struct pc_status, elem);
-        if (pcs->child_id == child_tid) {
-             if (pcs->alive_count == 2) {
+    if (!list_empty(&t->child_list)) {
+        struct thread *t = thread_current();
+        struct list_elem *e;
+        for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
+            struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+            if (pcs->child_id == child_tid) {
                 sema_down(&pcs->sema_wait);
-             }
-             int exit_status = pcs->exit_status;
-             list_remove(e);
-             free(pcs);
-             return exit_status;
+                int exit_status = pcs->exit_status;
+                list_remove(e);
+                free(pcs);
+                return exit_status;
+            }
+            e = list_next(e);
         }
-        e = list_next(e);
     }
-
     return -1;
 }
 
