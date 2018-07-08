@@ -312,6 +312,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
   char *addr[32];
 
   s = palloc_get_page (0);
+  if (s == NULL)
+    goto done;
   strlcpy(s, file_name, PGSIZE);
 
   //tokenize the string and save each token as an argument
@@ -324,7 +326,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   int j;
   *esp -= 4;                          // stack starts 1 page below PHYS_BASE
-  for (j = arg_num-1; j < 0; --j) {
+  for (j = arg_num-1; j >= 0; --j) {
       *((char**)(*esp)) = argv[j];    //push argv[j] on stack
       addr[j] = *esp;                 //save addr of argv[j]
       *esp -= strlen(argv[j]);        //go to next empty addr on stack
@@ -333,8 +335,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   while(!*esp%4) --*esp;              //word align
   *esp -= 4;                          //start next segment 1 page below last one
-  *((char**)(*esp)) = "\0";              //argv[argc] == NULL
-  for (j = arg_num-1; j < 0; --j) {
+  *((char**)(*esp)) = "\0";           //argv[argc] == NULL
+  for (j = arg_num-1; j >= 0; --j) {
       *((char**)*esp) = addr[j];      //push addr[j] on stack
       *esp -= 4;                      //go to next empty addr on stack
   }
