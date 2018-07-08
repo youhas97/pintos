@@ -161,9 +161,8 @@ process_exit (void)
     }
 
   struct list_elem *e;
-  for (e = list_begin(&cur->child_list);
-  e != list_end(&cur->child_list);
-  e = list_remove(e)) {
+  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
+       e = list_remove(e)) {
       struct pc_status *pcs = list_entry(e, struct pc_status, elem);
 
       if (pcs->alive_count <= 1)
@@ -174,10 +173,10 @@ process_exit (void)
 
   if (cur->parent_pcs->alive_count <= 1)
     free(cur->parent_pcs);
-  else {
-    sema_up(&cur->parent_pcs->sema_wait);
+  else
     cur->parent_pcs->alive_count -= 1;
-  }
+
+  sema_up(&cur->parent_pcs->sema_wait);
   cur->parent_pcs->exit_status = 0;
 }
 
@@ -388,7 +387,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     else
       printf(" \t");
     // ... and 32-bit aligned content
-    if(i % 4 == 0) {	
+    if(i % 4 == 0) {
       uint32_t *wt_uint32 = (uint32_t *)(ptr_save - i);
       printf("%x\t", *wt_uint32);
       printf("\n-------");
