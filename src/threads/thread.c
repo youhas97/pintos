@@ -286,41 +286,6 @@ thread_exit (void)
 {
   ASSERT (!intr_context ());
 
-  /*
-  FRÅGA:
-  vad spelar det för roll ifall detta är i process_exit elr thread_exit??
-  */
-  /*
-  struct thread *t = thread_current();
-  //free children's pcs
-  if (!list_empty(&t->child_list)) {
-      struct list_elem *e;
-      for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
-           e = list_next(e)) {
-          struct pc_status *pcs = list_entry(e, struct pc_status, elem);
-          if (pcs) {
-              lock_acquire(&pcs->exit_lock);
-              if (--(pcs->alive_count) == 0)
-                  free(pcs);
-              lock_release(&pcs->exit_lock);
-          }
-      }
-  }
-
-  // free the parent pcs
-  if(t->parent_pcs) {
-      lock_acquire(&t->parent_pcs->exit_lock);
-      if (--(t->parent_pcs->alive_count) == 0) {
-          sema_up(&t->parent_pcs->sema_wait);
-          free(t->parent_pcs);
-      }
-      else {
-          sema_up(&t->parent_pcs->sema_wait);
-      }
-      lock_release(&t->parent_pcs->exit_lock);
-  }
-  */
-
 #ifdef USERPROG
     int fd ;
     for (fd = 0; fd<MAX_FILES; ++fd) {

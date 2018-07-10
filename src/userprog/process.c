@@ -190,7 +190,7 @@ process_exit (void)
         }
         lock_release(&cur->parent_pcs->exit_lock);
     }
-    
+
 }
 
 /* Sets up the CPU for running user code in the current
@@ -327,20 +327,20 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (s == NULL)
     goto done;
   strlcpy(s, file_name, PGSIZE);
-  //printf("s = %s\n", s);
+  printf("s = %s\n", s);
 
   //tokenize the string and save each token as an argument
   int arg_num = 0;
-  //printf("arg_num pre loop = %d\n", arg_num);
+  printf("arg_num pre loop = %d\n", arg_num);
   for (token = strtok_r(s, " ", &save_ptr); token != NULL;
        token = strtok_r(NULL, " ", &save_ptr)) {
            argv[arg_num] = token;
            ++arg_num;
        }
-  //printf("arg_num post loop = %d\n", arg_num);
+  printf("arg_num post loop = %d\n", arg_num);
 
   int j;
-  //printf("PHYS_BASE = %p\n", *esp);
+  printf("PHYS_BASE = %p\n", *esp);
   --(*esp);                           //stack starts below PHYS_BASE
   for (j = arg_num-1; j >= 0; --j) {
       *((char*)*esp) = '\0';          //**esp -> *esp -> esp = "\0"
@@ -353,15 +353,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
       addr[j] = *esp;                 //save mem addr of argv[j]
       --(*esp);                       //dec pointer to prepare for the next arg
   }
-  //printf("after putting arg on stack = %p\n", *esp);
+  printf("after putting arg on stack = %p\n", *esp);
 
-  //printf("esp before align = %p\n", *esp);
+  printf("esp before align = %p\n", *esp);
   while((int)(*esp)%4 != 0) --*esp;   //word align
-  //printf("esp after align = %p\n", *esp);
+  printf("esp after align = %p\n", *esp);
   *esp -= 4;                          //start next segment 1 page below last one
-  *((char**)(*esp)) = NULL;           //argv[argc] == NULL
+  *((char**)(*esp)) = '\0';           //argv[argc] == NULL
 
-  //printf("start pushing addr on stack = %p\n", *esp);
+  printf("start pushing addr on stack = %p\n", *esp);
   for (j = arg_num-1; j >= 0; --j) {
       *((char**)*esp) = addr[j];      //push addr[j] on stack
       *esp -= 4;                      //go to next empty addr on stack
@@ -369,7 +369,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   *((char**)*esp) = (char*)*esp + 4;  //push argv start addr on stack
 
   *esp -= 4;
-  //printf("arg_num = %d\n", arg_num);
+  printf("arg_num = %d\n", arg_num);
   *((int*)*esp) = arg_num;            //push arg_num (argc) on stack
 
   *esp -= 4;
@@ -380,7 +380,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
      information. This will be useful when you debug the program
      stack.*/
 
-//#define STACK_DEBUG
+#define STACK_DEBUG
 
 #ifdef STACK_DEBUG
   printf("*esp is %p\nstack contents:\n", *esp);
