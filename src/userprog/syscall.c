@@ -54,6 +54,10 @@ void halt(void){
 }
 
 bool create (const char *file, unsigned initial_size){
+    if (!is_valid_ptr(file) || !is_valid_str(file)) {
+        exit(-1);
+        return false;
+    }
     return filesys_create(file, initial_size);
 }
 
@@ -136,10 +140,12 @@ int write (int fd, const void *buffer, unsigned size){
 }
 
 tid_t exec (const char *cmd_line) {
-    if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
-        return process_execute(cmd_line);
-    exit(-1);
-    return -1;
+    if (!is_valid_ptr(cmd_line) || !is_valid_str(cmd_line)) {
+        exit(-1);
+        return -1;
+    }
+    return process_execute(cmd_line);
+
 }
 
 void exit (int status){
