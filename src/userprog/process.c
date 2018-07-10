@@ -328,7 +328,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (s == NULL)
     goto done;
   strlcpy(s, file_name, PGSIZE);
-  printf("s = %s\n", s);
+  //printf("s = %s\n", s);
 
   //tokenize the string and save each token as an argument
   int arg_num = 0;
@@ -381,7 +381,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
      information. This will be useful when you debug the program
      stack.*/
 
-#define STACK_DEBUG
+//#define STACK_DEBUG
 
 #ifdef STACK_DEBUG
   printf("*esp is %p\nstack contents:\n", *esp);

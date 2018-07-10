@@ -51,7 +51,7 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
-static void halt(void){
+void halt(void){
     power_off();
 }
 
@@ -140,21 +140,21 @@ int write (int fd, const void *buffer, unsigned size){
     return -1;
 }
 
-static tid_t exec (const char *cmd_line) {
+tid_t exec (const char *cmd_line) {
     if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
         return process_execute(cmd_line);
     exit(-1);
     return -1;
 }
 
-static void exit (int status){
+void exit (int status){
     struct thread *t = thread_current();
     t->parent_pcs->exit_status = status;
     printf("%s: exit(%d)\n", t->name, status);
     thread_exit();
 }
 
-static int wait (tid_t pid) {
+int wait (tid_t pid) {
     return process_wait(pid);
 }
 
