@@ -15,7 +15,12 @@ static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
   //check if p != null, t->pagedir is mapped and p is a user virtual addr
-  return ((p != NULL) && ((pagedir_get_page(t->pagedir, p) != NULL) && !is_kernel_vaddr(p)));
+  if (p != NULL)
+      if (is_user_vaddr(p))
+          if(pagedir_get_page(t->pagedir, p) != NULL)
+              return true;
+  return false;
+  //return ((p != NULL) && ((pagedir_get_page(t->pagedir, p) != NULL) && is_user_vaddr(p)));
 }
 
 static bool
