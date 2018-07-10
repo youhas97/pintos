@@ -24,12 +24,14 @@ static bool
 is_valid_str(const char *s) {
   char c = *s;
   int i = 0;
+  int test = 0;
+  printf("increment in print from 0 to  %d\n", test++);
+  printf("after increment %d\n", test);
+
 
   while(c != '\0') {
     if (is_valid_ptr(s + i)) {        //validate every letter in string.
-       printf("pre increment %d\n", i);
 	   c = *(s + i++);
-       printf("post increment %d\n", i);
        }
     else
 	   return false;
