@@ -54,11 +54,7 @@ void halt(void){
 }
 
 bool create (const char *file, unsigned initial_size){
-    if(is_valid_ptr(file) && is_valid_str(*file) && strlen(file) > 0)
-        return filesys_create(file, initial_size);
-
-    exit(-1);
-    return false;
+    return filesys_create(file, initial_size);
 }
 
 int open (const char *file){
