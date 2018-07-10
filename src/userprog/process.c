@@ -125,7 +125,7 @@ process_wait (tid_t child_tid)
     struct thread *t = thread_current();
     if (!list_empty(&t->child_list)) {
         struct list_elem *e;
-        for (e = list_begin(&t->child_list); e != list_end(&t->child_list);) {
+        for (e = list_begin(&t->child_list); e != list_end(&t->child_list); e = list_next(e)) {
             struct pc_status *pcs = list_entry(e, struct pc_status, elem);
             if (pcs->child_id == child_tid) {
                 sema_down(&pcs->sema_wait);
@@ -134,7 +134,6 @@ process_wait (tid_t child_tid)
                 free(pcs);
                 return exit_status;
             }
-            e = list_next(e);
         }
     }
     return -1;

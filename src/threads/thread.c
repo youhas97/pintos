@@ -292,11 +292,11 @@ thread_exit (void)
   */
 
   struct thread *t = thread_current();
-  // free pcs for children
+  //free children's pcs
   if (!list_empty(&t->child_list)) {
       struct list_elem *e;
       for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
-           e = list_remove(e)) {
+           e = list_next(e)) {
           struct pc_status *pcs = list_entry(e, struct pc_status, elem);
           if (pcs) {
               lock_acquire(&pcs->exit_lock);
