@@ -23,11 +23,7 @@ is_valid_ptr(const void *p) {
 static bool
 is_valid_str(const char *s) {
   char c = *s;
-  int i = 0;
-  int test = 0;
-  printf("increment in print from 0 to  %d\n", test++);
-  printf("after increment %d\n", test);
-
+  int i = 0;   
 
   while(c != '\0') {
     if (is_valid_ptr(s + i)) {        //validate every letter in string.
