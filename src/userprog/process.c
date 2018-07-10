@@ -164,27 +164,33 @@ process_exit (void)
       pagedir_destroy (pd);
     }
 
-  /*
-  struct list_elem *e;
-  for (e = list_begin(&cur->child_list); e != list_end(&cur->child_list);
-       e = list_remove(e)) {
-      struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+    // free pcs for children
+    if (!list_empty(&cur->child_list)) {
+        struct list_elem *e;
+        for (e = list_begin (&cur->child_list); e != list_end (&cur->child_list);
+             e = list_remove(e)) {
+            struct pc_status *pcs = list_entry(e, struct pc_status, elem);
+            if (pcs) {
+                lock_acquire(&pcs->exit_lock);
+                if (--(pcs->alive_count) == 0)
+                    free(pcs);
+                lock_release(&pcs->exit_lock);
+            }
+        }
+    }
 
-      if (pcs->alive_count <= 1)
-        free(pcs);
-      else
-        pcs->alive_count -= 1;
-  }
-
-  sema_up(&cur->parent_pcs->sema_wait);
-  if (cur->parent_pcs->alive_count <= 1)
-    free(cur->parent_pcs);
-  else {
-    cur->parent_pcs->alive_count -= 1;
-  }
-
-  cur->parent_pcs->exit_status = 0;
-  */
+    // free the parent pcs
+    if(cur->parent_pcs) {
+        lock_acquire(&cur->parent_pcs->exit_lock);
+        if (--(cur->parent_pcs->alive_count) == 0) {
+            sema_up(&cur->parent_pcs->sema_wait);
+            free(cur->parent_pcs);
+        }
+        else {
+            sema_up(&cur->parent_pcs->sema_wait);
+        }
+        lock_release(&cur->parent_pcs->exit_lock);
+    }
 }
 
 /* Sets up the CPU for running user code in the current

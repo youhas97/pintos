@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -175,14 +176,13 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   char *s;
-
   s = palloc_get_page(0);
   if (s == NULL)
     return TID_ERROR;
 
   char *token, *save_ptr;
   strlcpy(s, name, PGSIZE);
-  token = strtok_r(s, " ", &save_ptr);
+  token = strtok_r(s, " ", &save_ptr); //file name is argv[0];
 
   /* Initialize thread. */
   init_thread (t, token, priority);
@@ -285,12 +285,17 @@ void
 thread_exit (void)
 {
   ASSERT (!intr_context ());
+ /*
+ FRÅGA:
+ vad spelar det för roll ifall detta är i process_exit elr thread_exit??
+ */
 
+  /*
   struct thread *t = thread_current();
-  struct list_elem *e;
-
-  /* free pcs for children */
+  
+  // free pcs for children
   if (!list_empty(&t->child_list)) {
+      struct list_elem *e;
       for (e = list_begin (&t->child_list); e != list_end (&t->child_list);
            e = list_remove(e)) {
           struct pc_status *pcs = list_entry(e, struct pc_status, elem);
@@ -303,7 +308,7 @@ thread_exit (void)
       }
   }
 
-  /* free the parent pcs */
+  // free the parent pcs
   if(t->parent_pcs) {
       lock_acquire(&t->parent_pcs->exit_lock);
       if (--(t->parent_pcs->alive_count) == 0) {
@@ -315,7 +320,7 @@ thread_exit (void)
       }
       lock_release(&t->parent_pcs->exit_lock);
   }
-
+  */
 #ifdef USERPROG
     int fd ;
     for (fd = 0; fd<MAX_FILES; ++fd) {
