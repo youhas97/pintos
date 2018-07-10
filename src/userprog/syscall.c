@@ -14,7 +14,6 @@ static void syscall_handler (struct intr_frame *);
 static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
-  //check if p != null, t->pagedir is mapped and p is a user virtual addr
   return ((p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(t->pagedir, p) != NULL)));
 }
 

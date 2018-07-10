@@ -327,7 +327,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (s == NULL)
     goto done;
   strlcpy(s, file_name, PGSIZE);
-  //printf("s = %s\n", s);
 
   //tokenize the string and save each token as an argument
   int arg_num = 0;
