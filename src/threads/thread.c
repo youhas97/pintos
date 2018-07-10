@@ -285,14 +285,13 @@ void
 thread_exit (void)
 {
   ASSERT (!intr_context ());
- /*
- FRÅGA:
- vad spelar det för roll ifall detta är i process_exit elr thread_exit??
- */
 
   /*
+  FRÅGA:
+  vad spelar det för roll ifall detta är i process_exit elr thread_exit??
+  */
+
   struct thread *t = thread_current();
-  
   // free pcs for children
   if (!list_empty(&t->child_list)) {
       struct list_elem *e;
@@ -320,7 +319,7 @@ thread_exit (void)
       }
       lock_release(&t->parent_pcs->exit_lock);
   }
-  */
+
 #ifdef USERPROG
     int fd ;
     for (fd = 0; fd<MAX_FILES; ++fd) {

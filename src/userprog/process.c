@@ -36,6 +36,7 @@ process_execute (const char *file_name)
   struct pc_status *pcs = (struct pc_status*)malloc(sizeof(struct pc_status));
   sema_init(&pcs->sema_exec, 0);
   sema_init(&pcs->sema_wait, 0);
+  lock_init(&pcs->exit_lock);
 
   pcs->alive_count = 2;
 
@@ -72,7 +73,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *pcs_)
 {
-  struct pc_status *pcs = pcs_;
+  struct pc_status *pcs = (struct pc_status*)pcs_;
   char *file_name = pcs->f_name;
   struct intr_frame if_;
   bool success;
@@ -119,7 +120,7 @@ start_process (void *pcs_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED)
+process_wait (tid_t child_tid)
 {
     struct thread *t = thread_current();
     if (!list_empty(&t->child_list)) {
@@ -144,7 +145,6 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
-  //cur->parent_pcs->exit_status = -1;
   uint32_t *pd;
 
   /* Destroy the current process's page directory and switch back
@@ -164,6 +164,7 @@ process_exit (void)
       pagedir_destroy (pd);
     }
 
+    /*
     // free pcs for children
     if (!list_empty(&cur->child_list)) {
         struct list_elem *e;
@@ -191,6 +192,7 @@ process_exit (void)
         }
         lock_release(&cur->parent_pcs->exit_lock);
     }
+    */
 }
 
 /* Sets up the CPU for running user code in the current

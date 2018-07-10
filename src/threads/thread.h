@@ -124,7 +124,7 @@ struct pc_status {
   char *f_name;
   tid_t child_id;
 
-  struct list_elem elem;      //list element
+  struct list_elem elem;            //list element
   };
 
 /* If false (default), use round-robin scheduler.
