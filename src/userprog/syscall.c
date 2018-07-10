@@ -14,6 +14,7 @@ static void syscall_handler (struct intr_frame *);
 static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
+  // Checks if p is null, if p is a valid uaddr and if p is mapped in that order
   return ((p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(t->pagedir, p) != NULL)));
 }
 
