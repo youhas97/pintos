@@ -6,8 +6,8 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "filesys/inode.h"
-#include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+#include "userprog/pagedir.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -51,7 +51,7 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
-void halt(void){
+static void halt(void){
     power_off();
 }
 
@@ -140,21 +140,21 @@ int write (int fd, const void *buffer, unsigned size){
     return -1;
 }
 
-tid_t exec (const char *cmd_line) {
+static tid_t exec (const char *cmd_line) {
     if (is_valid_ptr(cmd_line) && is_valid_str(cmd_line))
         return process_execute(cmd_line);
     exit(-1);
     return -1;
 }
 
-void exit (int status){
+static void exit (int status){
     struct thread *t = thread_current();
     t->parent_pcs->exit_status = status;
     printf("%s: exit(%d)\n", t->name, status);
     thread_exit();
 }
 
-int wait (tid_t pid) {
+static int wait (tid_t pid) {
     return process_wait(pid);
 }
 
