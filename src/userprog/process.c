@@ -337,6 +337,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
            argv[arg_num] = token;
            ++arg_num;
        }
+  int arg_loop;
+  for (arg_loop = 0; arg_loop < arg_num; ++arg_loop) {
+      printf("arg[%d]: %s\n", arg_loop, argv[arg_loop]);
+  }
   printf("arg_num post loop = %d\n", arg_num);
 
   int j;
