@@ -14,7 +14,8 @@ static void syscall_handler (struct intr_frame *);
 static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
-  bool result = (p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(t->pagedir, p) != NULL));
+  //check if p != null, t->pagedir is mapped and p is a user virtual addr
+  bool result = (p != NULL) &&  ((pagedir_get_page(t->pagedir, p) != NULL) &&is_user_vaddr(p));
   return result;
 
 }
@@ -24,15 +25,14 @@ is_valid_str(const char *s) {
 
   char letter = *s;
   int i = 0;
-  bool result = true;
 
   while(letter != '\0') {
-    if (is_valid_ptr(s + i))
+    if (is_valid_ptr(s + i))        //validate every letter in string.
 	   letter = *(s + i++);
     else
-	   result = false;
-    return result;
+	   return false;
   }
+  return true;
 }
 
 static bool
