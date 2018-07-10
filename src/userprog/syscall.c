@@ -15,24 +15,22 @@ static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
   //check if p != null, t->pagedir is mapped and p is a user virtual addr
-  bool result = ((p != NULL) && ((pagedir_get_page(t->pagedir, p) != NULL) && is_user_vaddr(p)));
-  return result;
-
+  return ((p != NULL) && ((pagedir_get_page(t->pagedir, p) != NULL) && is_user_vaddr(p)));
 }
 
 static bool
 is_valid_str(const char *s) {
   char c = *s;
-  int i = 0;   
+  int i = 0;
+  bool res = true;
 
   while(c != '\0') {
-    if (is_valid_ptr(s + i)) {        //validate every letter in string.
+    if (is_valid_ptr(s + i))        //validate every letter in string.
 	   c = *(s + i++);
-       }
     else
-	   return false;
+	   res = false;
   }
-  return true;
+  return res;
 }
 
 static bool
