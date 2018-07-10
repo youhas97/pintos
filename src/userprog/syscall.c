@@ -22,15 +22,15 @@ static bool
 is_valid_str(const char *s) {
   char c = *s;
   int i = 0;
-  bool res = true;
 
   while(c != '\0') {
-    if (is_valid_ptr(s + i))        //validate every letter in string.
+    if (is_valid_ptr(s + i)) {        //validate every letter in string.
 	   c = *(s + i++);
+       }
     else
-	   res = false;
+	   return false;
   }
-  return res;
+  return true;
 }
 
 static bool
@@ -54,7 +54,7 @@ void halt(void){
 }
 
 bool create (const char *file, unsigned initial_size){
-    if(is_valid_ptr(file) && is_valid_str(*file) && strlen(file))
+    if(is_valid_ptr(file) && is_valid_str(*file) && strlen(file) > 0)
         return filesys_create(file, initial_size);
 
     exit(-1);
