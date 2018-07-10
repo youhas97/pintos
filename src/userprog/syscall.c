@@ -204,8 +204,9 @@ syscall_handler (struct intr_frame *f UNUSED)
                     f->eax = wait((tid_t)arg[1]);
                 else
                     exit(-1);
+                break;
             default:
-                printf ("system call! down here\n");
+                break;
         }
     }
     else
