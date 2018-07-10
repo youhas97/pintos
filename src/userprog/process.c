@@ -163,7 +163,6 @@ process_exit (void)
       pagedir_destroy (pd);
     }
 
-    /*
     // free pcs for children
     if (!list_empty(&cur->child_list)) {
         struct list_elem *e;
@@ -191,7 +190,7 @@ process_exit (void)
         }
         lock_release(&cur->parent_pcs->exit_lock);
     }
-    */
+    
 }
 
 /* Sets up the CPU for running user code in the current

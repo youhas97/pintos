@@ -290,7 +290,7 @@ thread_exit (void)
   FRÅGA:
   vad spelar det för roll ifall detta är i process_exit elr thread_exit??
   */
-
+  /*
   struct thread *t = thread_current();
   //free children's pcs
   if (!list_empty(&t->child_list)) {
@@ -319,6 +319,7 @@ thread_exit (void)
       }
       lock_release(&t->parent_pcs->exit_lock);
   }
+  */
 
 #ifdef USERPROG
     int fd ;
