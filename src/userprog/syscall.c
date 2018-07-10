@@ -15,7 +15,7 @@ static bool
 is_valid_ptr(const void *p) {
   struct thread *t = thread_current();
   //check if p != null, t->pagedir is mapped and p is a user virtual addr
-  return ((p != NULL) && ((pagedir_get_page(t->pagedir, p) != NULL) && is_user_vaddr(p)));
+  return ((p != NULL) && (is_user_vaddr(p) && (pagedir_get_page(t->pagedir, p) != NULL)));
 }
 
 static bool
@@ -57,11 +57,10 @@ bool create (const char *file, unsigned initial_size){
     /*
     why doesn't if(is_valid_ptr(file) && is_valid_str(file)) work?
     */
-    if (!is_valid_ptr(file) || !is_valid_str(file)) {
-        exit(-1);
-        return false;
-    }
-    return filesys_create(file, initial_size);
+    if (is_valid_ptr(file) && is_valid_str(file))
+        return filesys_create(file, initial_size);
+    exit(-1);
+    return false;
 }
 
 int open (const char *file){
