@@ -163,7 +163,9 @@ int wait (tid_t pid) {
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
-    if(is_valid_ptr(f->esp)) {
+    if(!is_valid_ptr(f->esp))
+        exit(-1);
+    else {
         int *arg = (int*)f->esp;
 
         switch(arg[0]){
@@ -210,6 +212,4 @@ syscall_handler (struct intr_frame *f UNUSED)
                 break;
         }
     }
-    else
-        exit(-1);
 }
