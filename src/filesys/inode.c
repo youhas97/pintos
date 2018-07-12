@@ -39,6 +39,8 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
 
+    int readers;
+    struct lock rmutex;                /* lock for changing value of readers */
     struct semaphore write_sema;       /* lock for reading/writing */
     struct lock dwc_lock;              /* deny_write_cnt lock */
     struct lock oc_lock;               /* lock for opening/closing */
@@ -148,6 +150,8 @@ inode_open (disk_sector_t sector)
   sema_init(&inode->write_sema, 1);
   lock_init(&inode->dwc_lock);
   lock_init(&inode->open_cnt_lock);
+  lock_init(&inode->rmutex);
+  inode->readers = 0;
 
   inode->sector = sector;
   inode->open_cnt = 1;
@@ -229,12 +233,11 @@ inode_remove (struct inode *inode)
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
-  /* prevents simultaneous change of deny_write_cnt */
-  lock_acquire(&inode->dwc_lock);
-  inode_deny_write(inode);
-  if (inode->deny_write_cnt == 1)
-      sema_down(&inode->write_sema);    //guarantees no writing while reading
-  lock_release(&inode->dwc_lock);
+  /* prevents simultaneous change of readers */
+  lock_acquire(&inode->rmutex);
+  if(++(inode->readers) == 1)
+    sema_down(&inode->write_sema);
+  lock_release(&inode->rmutex);
 
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
@@ -283,11 +286,10 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   free (bounce);
 
   /* prevents simultaneous change of deny_write_cnt */
-  lock_acquire(&inode->dwc_lock);
-  inode_allow_write(inode);
-  if(inode->deny_write_cnt == 0)
-    sema_up(&inode->write_sema);        //guarantees no readers if writing
-  lock_release(&inode->dwc_lock);
+  lock_acquire(&inode->rmutex);
+  if (--(inode->readers) == 0)
+    sema_up(&inode->write_sema);
+  lock_release(&inode->rmutex);
 
   return bytes_read;
 }
@@ -301,19 +303,16 @@ off_t
 inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)
 {
-
+  sema_down(&inode->write_sema);           //guarantees mutual exclusion
 
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
 
-  lock_acquire(&inode->dwc_lock);          //prevents denying while writing
   if (inode->deny_write_cnt) {
-    lock_release(&inode->dwc_lock);
+    sema_up(&inode->write_sema);
     return 0;
   }
-
-  sema_down(&inode->write_sema);           //prevents simultaneous writing
   while (size > 0)
     {
       /* Sector to write, starting byte offset within sector. */
@@ -363,8 +362,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     }
   free (bounce);
 
-  lock_release(&inode->dwc_lock);
-  sema_up(&inode->write_sema);               //release writing access
+  sema_up(&inode->write_sema);               //release writing resource
 
   return bytes_written;
 }
