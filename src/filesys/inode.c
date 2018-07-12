@@ -233,6 +233,10 @@ inode_remove (struct inode *inode)
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
+  lock_acquire(&inode->dwc_lock);
+  inode_deny_write(inode);
+  lock_release(&inode->dwc_lock);
+
   /* prevents simultaneous change of readers */
   lock_acquire(&inode->rmutex);
   if(++(inode->readers) == 1)
@@ -291,6 +295,10 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     sema_up(&inode->write_sema);
   lock_release(&inode->rmutex);
 
+  lock_acquire(&inode->dwc_lock);
+  inode_allow_write(inode);
+  lock_release(&inode->dwc_lock);
+
   return bytes_read;
 }
 
@@ -309,8 +317,10 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
 
+  lock_acquire(&inode->dwc_lock);
   if (inode->deny_write_cnt) {
     sema_up(&inode->write_sema);
+    lock_release(&inode->dwc_lock);
     return 0;
   }
   while (size > 0)
@@ -363,6 +373,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   free (bounce);
 
   sema_up(&inode->write_sema);               //release writing resource
+  lock_release(&inode->dwc_lock);
 
   return bytes_written;
 }
