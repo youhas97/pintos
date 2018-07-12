@@ -54,6 +54,9 @@ void halt(void){
 }
 
 bool create (const char *file, unsigned initial_size){
+    /*
+    why doesn't if(is_valid_ptr(file) && is_valid_str(file)) work?
+    */
     if (is_valid_ptr(file) && is_valid_str(file))
         return filesys_create(file, initial_size);
     exit(-1);
@@ -158,50 +161,6 @@ int wait (tid_t pid) {
     return process_wait(pid);
 }
 
-void seek (int fd, unsigned position) {
-    struct thread *t = thread_current();
-    if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
-        struct file *file_ptr = t->files[fd-OFFSET];
-
-        if (file_ptr) {
-            if (position > file_length(file_ptr))
-                file_seek(file_ptr, file_length(file_ptr));
-            else
-                file_seek(file_ptr, position);
-        }
-    }
-    exit(-1);
-}
-
-unsigned tell (int fd) {
-    struct thread *t = thread_current();
-    if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
-        struct file *file_ptr = t->files[fd-OFFSET];
-
-        if (file_ptr)
-            return file_tell(file_ptr);
-    }
-    exit(-1);
-}
-
-int filesize (int fd) {
-    struct thread *t = thread_current();
-    if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
-        struct file *file_ptr = t->files[fd-OFFSET];
-
-        if (file_ptr)
-            return file_length(file_ptr);
-    }
-    return -1;
-}
-
-bool remove (const char *file_name) {
-    if (is_valid_ptr(file_name) && is_valid_str(file_name)) {
-        return filesys_remove(file_name);
-    }
-    exit(-1);
-    return false;
-}
 
 static void
 syscall_handler (struct intr_frame *f UNUSED)
@@ -248,21 +207,6 @@ syscall_handler (struct intr_frame *f UNUSED)
             case SYS_WAIT:
                 if(is_valid_ptr(&arg[1]))
                     f->eax = wait((tid_t)arg[1]);
-                else
-                    exit(-1);
-                break;
-            case SYS_SEEK:
-                seek((int)arg[1], (unsigned)arg[2]);
-                break;
-            case SYS_TELL:
-                f->eax = tell((int)arg[1]);
-                break;
-            case SYS_FILESIZE:
-                f->eax = filesize((int)arg[1]);
-                break;
-            case SYS_REMOVE:
-                if(is_valid_ptr(&arg[1]))
-                    f->eax = remove((char*)arg[1]);
                 else
                     exit(-1);
                 break;
