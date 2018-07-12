@@ -134,11 +134,11 @@ int write (int fd, const void *buffer, unsigned size){
         if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
             struct file *file_ptr = t->files[fd-OFFSET];
 
-            if (file_ptr)
+            //if (file_ptr)
                 return file_write(file_ptr, buffer, size);
         }
     }
-    return 328;
+    return -1;
 }
 
 tid_t exec (const char *cmd_line) {
