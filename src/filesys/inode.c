@@ -120,9 +120,6 @@ inode_open (disk_sector_t sector)
   struct list_elem *e;
   struct inode *inode;
 
-  lock_init(&inode->oc_lock);
-  lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
-
   /* Check whether this inode is already open. */
   for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
        e = list_next (e))
@@ -131,13 +128,15 @@ inode_open (disk_sector_t sector)
       if (inode->sector == sector)
         {
           inode_reopen (inode);
-          lock_release(&inode->oc_lock);
           return inode;
         }
     }
 
   /* Allocate memory. */
   inode = malloc (sizeof *inode);
+
+  lock_init(&inode->oc_lock);
+  lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
   if (inode == NULL) {
     lock_release(&inode->oc_lock);
     return NULL;
