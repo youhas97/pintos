@@ -7,16 +7,20 @@
 #include "filesys/inode.h"
 #include "filesys/directory.h"
 #include "devices/disk.h"
+#include "threads/synch.h"
 
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
 
 static void do_format (void);
 
+struct lock c_lock;     //used for creating
+struct lock exclusion;    //used for opening/removing
+
 /* Initializes the file system module.
    If FORMAT is true, reformats the file system. */
 void
-filesys_init (bool format) 
+filesys_init (bool format)
 {
   filesys_disk = disk_get (0, 1);
   if (filesys_disk == NULL)
@@ -25,16 +29,19 @@ filesys_init (bool format)
   inode_init ();
   free_map_init ();
 
-  if (format) 
+  if (format)
     do_format ();
 
   free_map_open ();
+
+  lock_init(&c_lock);
+  lock_init(&exclusion);
 }
 
 /* Shuts down the file system module, writing any unwritten data
    to disk. */
 void
-filesys_done (void) 
+filesys_done (void)
 {
   free_map_close ();
 }
@@ -44,18 +51,20 @@ filesys_done (void)
    Fails if a file named NAME already exists,
    or if internal memory allocation fails. */
 bool
-filesys_create (const char *name, off_t initial_size) 
+filesys_create (const char *name, off_t initial_size)
 {
+  lock_acquire(&c_lock);        //guarantees mutual exclusion when creating
   disk_sector_t inode_sector = 0;
   struct dir *dir = dir_open_root ();
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size)
                   && dir_add (dir, name, inode_sector));
-  if (!success && inode_sector != 0) 
+  if (!success && inode_sector != 0)
     free_map_release (inode_sector, 1);
   dir_close (dir);
 
+  lock_release(&c_lock);
   return success;
 }
 
@@ -67,6 +76,7 @@ filesys_create (const char *name, off_t initial_size)
 struct file *
 filesys_open (const char *name)
 {
+  lock_acquire(&exclusion);        //guarantees mutual exclusion when removing
   struct dir *dir = dir_open_root ();
   struct inode *inode = NULL;
 
@@ -74,6 +84,7 @@ filesys_open (const char *name)
     dir_lookup (dir, name, &inode);
   dir_close (dir);
 
+  lock_release(&exclusion);
   return file_open (inode);
 }
 
@@ -82,12 +93,14 @@ filesys_open (const char *name)
    Fails if no file named NAME exists,
    or if an internal memory allocation fails. */
 bool
-filesys_remove (const char *name) 
+filesys_remove (const char *name)
 {
+  lock_acquire(&exclusion);       //guarantees mutual exclusion when removing
   struct dir *dir = dir_open_root ();
   bool success = dir != NULL && dir_remove (dir, name);
-  dir_close (dir); 
+  dir_close (dir);
 
+  lock_release(&exclusion);
   return success;
 }
 

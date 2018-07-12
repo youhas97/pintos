@@ -165,7 +165,7 @@ void seek (int fd, unsigned position) {
         struct file *file_ptr = t->files[fd-OFFSET];
 
         if (file_ptr) {
-            if (position > file_length(file_ptr))
+            if (position > (unsigned)file_length(file_ptr))
                 file_seek(file_ptr, file_length(file_ptr));
             else
                 file_seek(file_ptr, position);
@@ -181,6 +181,7 @@ unsigned tell (int fd) {
         if (file_ptr)
             return file_tell(file_ptr);
     }
+    return -1; //I don't know what to return
 }
 
 int filesize (int fd) {
@@ -191,7 +192,7 @@ int filesize (int fd) {
         if (file_ptr)
             return file_length(file_ptr);
     }
-    return -1;
+    return -1;  //I don't know what to return
 }
 
 bool remove (const char *file_name) {

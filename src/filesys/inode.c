@@ -172,8 +172,8 @@ inode_reopen (struct inode *inode)
 {
   if (inode != NULL)
     {
-      lock_acquire(&inode->open_cnt_lock);
       ASSERT(inode->open_cnt != 0);
+      lock_acquire(&inode->open_cnt_lock);
       inode->open_cnt++;
       lock_release(&inode->open_cnt_lock);
     }
