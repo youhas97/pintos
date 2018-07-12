@@ -121,7 +121,7 @@ inode_open (disk_sector_t sector)
   struct list_elem *e;
   struct inode *inode;
 
-  lock_init(&inode->oc_lock);
+  //lock_init(&inode->oc_lock);
 
   /* Check whether this inode is already open. */
   for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
@@ -144,9 +144,9 @@ inode_open (disk_sector_t sector)
   }
 
   /* Initialize. */
-  sema_init(&inode->write_sema, 1);
-  lock_init(&inode->dwc_lock);
-  lock_init(&inode->open_cnt_lock);
+  //sema_init(&inode->write_sema, 1);
+  //lock_init(&inode->dwc_lock);
+  //lock_init(&inode->open_cnt_lock);
 
   list_push_front (&open_inodes, &inode->elem);
   inode->sector = sector;
@@ -154,7 +154,7 @@ inode_open (disk_sector_t sector)
   inode->deny_write_cnt = 0;
   inode->removed = false;
   disk_read (filesys_disk, inode->sector, &inode->data);
-  lock_release(&inode->oc_lock);
+  //lock_release(&inode->oc_lock);
   return inode;
 }
 
