@@ -143,17 +143,17 @@ inode_open (disk_sector_t sector)
   }
 
   /* Initialize. */
+  list_push_front (&open_inodes, &inode->elem);
+  lock_release(&inode->oc_lock);
+
   sema_init(&inode->write_sema, 1);
   lock_init(&inode->dwc_lock);
   lock_init(&inode->open_cnt_lock);
-
-  list_push_front (&open_inodes, &inode->elem);
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->deny_write_cnt = 0;
   inode->removed = false;
   disk_read (filesys_disk, inode->sector, &inode->data);
-  lock_release(&inode->oc_lock);
   return inode;
 }
 
