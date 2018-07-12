@@ -136,24 +136,25 @@ inode_open (disk_sector_t sector)
   inode = malloc (sizeof *inode);
 
   lock_init(&inode->oc_lock);
-  lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
+  //lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
   if (inode == NULL) {
-    lock_release(&inode->oc_lock);
+    //lock_release(&inode->oc_lock);
     return NULL;
   }
 
   /* Initialize. */
-  list_push_front (&open_inodes, &inode->elem);
-  lock_release(&inode->oc_lock);
-
   sema_init(&inode->write_sema, 1);
   lock_init(&inode->dwc_lock);
   lock_init(&inode->open_cnt_lock);
+
+  list_push_front (&open_inodes, &inode->elem);
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->deny_write_cnt = 0;
   inode->removed = false;
   disk_read (filesys_disk, inode->sector, &inode->data);
+
+  //lock_release(&inode->oc_lock);
   return inode;
 }
 
@@ -163,10 +164,10 @@ inode_reopen (struct inode *inode)
 {
   if (inode != NULL)
     {
-      lock_acquire(&inode->open_cnt_lock);
+      //lock_acquire(&inode->open_cnt_lock);
       ASSERT(inode->open_cnt != 0);
       inode->open_cnt++;
-      lock_release(&inode->open_cnt_lock);
+      //lock_release(&inode->open_cnt_lock);
     }
   return inode;
 }
@@ -188,11 +189,11 @@ inode_close (struct inode *inode)
   if (inode == NULL)
     return;
 
-  lock_acquire(&inode->open_cnt_lock);
+  //lock_acquire(&inode->open_cnt_lock);
   /* Release resources if this was the last opener. */
   if (--inode->open_cnt == 0)
     {
-      lock_acquire(&inode->oc_lock);
+      //lock_acquire(&inode->oc_lock);
       /* Remove from inode list and release lock. */
       list_remove (&inode->elem);
 
@@ -204,10 +205,10 @@ inode_close (struct inode *inode)
                             bytes_to_sectors (inode->data.length));
         }
 
-      lock_release(&inode->oc_lock);
+      //lock_release(&inode->oc_lock);
       free (inode);
     }
-    lock_release(&inode->open_cnt_lock);
+    //lock_release(&inode->open_cnt_lock);
 }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
@@ -226,9 +227,9 @@ off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
   /* prevents simultaneous change of deny_write_cnt */
-  lock_acquire(&inode->dwc_lock);
+  //lock_acquire(&inode->dwc_lock);
   inode_deny_write(inode);
-  lock_release(&inode->dwc_lock);
+  //lock_release(&inode->dwc_lock);
 
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
@@ -277,9 +278,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   free (bounce);
 
   /* prevents simultaneous change of deny_write_cnt */
-  lock_acquire(&inode->dwc_lock);
+  //lock_acquire(&inode->dwc_lock);
   inode_allow_write(inode);
-  lock_release(&inode->dwc_lock);
+  //lock_release(&inode->dwc_lock);
 
   return bytes_read;
 }
@@ -297,13 +298,13 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
 
-  lock_acquire(&inode->dwc_lock);          //prevents denying while writing
+  //lock_acquire(&inode->dwc_lock);          //prevents denying while writing
   if (inode->deny_write_cnt) {
-    lock_release(&inode->dwc_lock);
+    //lock_release(&inode->dwc_lock);
     return 0;
   }
 
-  sema_down(&inode->write_sema);           //prevents simultaneous writing
+  //sema_down(&inode->write_sema);           //prevents simultaneous writing
   while (size > 0)
     {
       /* Sector to write, starting byte offset within sector. */
@@ -353,8 +354,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     }
   free (bounce);
 
-  sema_up(&inode->write_sema);               //release writing access
-  lock_release(&inode->dwc_lock);
+  //sema_up(&inode->write_sema);               //release writing access
+  //lock_release(&inode->dwc_lock);
 
   return bytes_written;
 }
