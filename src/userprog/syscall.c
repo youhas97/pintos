@@ -253,6 +253,21 @@ syscall_handler (struct intr_frame *f UNUSED)
                 else
                     exit(-1);
                 break;
+            case SYS_SEEK:
+                seek((int)arg[1], (unsigned)arg[2]);
+                break;
+            case SYS_TELL:
+                f->eax = tell((int)arg[1]);
+                break;
+            case SYS_FILESIZE:
+                f->eax = filesize((int)arg[1]);
+                break;
+            case SYS_REMOVE:
+                if(is_valid_ptr(&arg[1]))
+                    f->eax = remove((char*)arg[1]);
+                else
+                    exit(-1);
+                break;
             default:
                 break;
         }
