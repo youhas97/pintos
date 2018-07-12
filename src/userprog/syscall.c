@@ -138,7 +138,7 @@ int write (int fd, const void *buffer, unsigned size){
                 return file_write(file_ptr, buffer, size);
         }
     }
-    return -1;
+    return 328;
 }
 
 tid_t exec (const char *cmd_line) {
