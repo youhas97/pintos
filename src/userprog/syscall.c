@@ -159,6 +159,7 @@ int wait (tid_t pid) {
     return process_wait(pid);
 }
 
+/*
 void seek (int fd, unsigned position) {
     struct thread *t = thread_current();
     if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
@@ -201,6 +202,7 @@ bool remove (const char *file_name) {
     exit(-1);
     return false;
 }
+*/
 
 
 static void
@@ -251,7 +253,7 @@ syscall_handler (struct intr_frame *f UNUSED)
                 else
                     exit(-1);
                 break;
-            case SYS_SEEK:
+            /*case SYS_SEEK:
                 seek((int)arg[1], (unsigned)arg[2]);
                 break;
             case SYS_TELL:
@@ -265,7 +267,7 @@ syscall_handler (struct intr_frame *f UNUSED)
                     f->eax = remove((char*)arg[1]);
                 else
                     exit(-1);
-                break;
+                break;*/
             default:
                 break;
         }
