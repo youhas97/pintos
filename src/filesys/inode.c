@@ -39,10 +39,10 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
 
-    struct semaphore *write_sema;       /* lock for reading/writing */
-    struct lock *dwc_lock;              /* deny_write_cnt lock */
-    struct lock *oc_lock;               /* lock for opening/closing */
-    struct lock *open_cnt_lock;         /* lock to prevent simultaneous changes to open_cnt */
+    struct semaphore write_sema;       /* lock for reading/writing */
+    struct lock dwc_lock;              /* deny_write_cnt lock */
+    struct lock oc_lock;               /* lock for opening/closing */
+    struct lock open_cnt_lock;         /* lock to prevent simultaneous changes to open_cnt */
   };
 
 /* Returns the disk sector that contains byte offset POS within
