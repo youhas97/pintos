@@ -41,8 +41,8 @@ struct inode
 
     int readers;
     struct lock rmutex;                /* lock for changing value of readers */
-    struct semaphore write_sema;       /* lock for reading/writing */
-    struct lock dwc_lock;              /* deny_write_cnt lock */
+    struct semaphore write_sema;       /* sema for reading/writing */
+    struct lock wmutex;                /* lock for writing */
     struct lock oc_lock;               /* lock for opening/closing */
     struct lock open_cnt_lock;         /* lock to prevent simultaneous changes to open_cnt */
   };
@@ -148,7 +148,7 @@ inode_open (disk_sector_t sector)
   list_push_front (&open_inodes, &inode->elem);
 
   sema_init(&inode->write_sema, 1);
-  lock_init(&inode->dwc_lock);
+  lock_init(&inode->wmutex);
   lock_init(&inode->open_cnt_lock);
   lock_init(&inode->rmutex);
   inode->readers = 0;
@@ -304,6 +304,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)
 {
   sema_down(&inode->write_sema);           //guarantees mutual exclusion
+  lock_acquire(&inode->wmutex);
 
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
@@ -311,6 +312,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
   if (inode->deny_write_cnt) {
     sema_up(&inode->write_sema);
+    lock_release(&inode->wmutex);
     return 0;
   }
   while (size > 0)
@@ -363,6 +365,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   free (bounce);
 
   sema_up(&inode->write_sema);               //release writing resource
+  lock_release(&inode->wmutex);
 
   return bytes_written;
 }
