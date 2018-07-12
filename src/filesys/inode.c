@@ -39,12 +39,14 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
 
-    int readers;
-    struct lock rmutex;                /* lock for changing value of readers */
-    struct semaphore write_sema;       /* lock for reading/writing */
-    struct lock dwc_lock;              /* deny_write_cnt lock */
-    struct lock oc_lock;               /* lock for opening/closing */
-    struct lock open_cnt_lock;         /* lock to prevent simultaneous changes to open_cnt */
+    int readers;                        /* amount of concurrent readers */
+    bool read_wait;                     /* used to see if a writer is waiting */
+
+    struct lock r_in;                   /* lock for entering read critical section */
+    struct lock r_out;                  /* lock for exiting read critical section     */
+    struct semaphore write_sema;        /* sema for reading/writing */
+    struct lock oc_lock;                /* lock for opening/closing */
+    struct lock open_cnt_lock;          /* lock to prevent simultaneous changes to open_cnt */
   };
 
 /* Returns the disk sector that contains byte offset POS within
@@ -147,12 +149,13 @@ inode_open (disk_sector_t sector)
   /* Initialize. */
   list_push_front (&open_inodes, &inode->elem);
 
-  sema_init(&inode->write_sema, 1);
-  lock_init(&inode->dwc_lock);
   lock_init(&inode->open_cnt_lock);
-  lock_init(&inode->rmutex);
-  inode->readers = 0;
+  lock_init(&inode->r_in);
+  lock_init(&inode->r_out);
+  sema_init(&inode->write_sema, 0);
 
+  inode->read_wait = false;
+  inode->readers = 0;
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->deny_write_cnt = 0;
@@ -233,15 +236,10 @@ inode_remove (struct inode *inode)
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
-  lock_acquire(&inode->dwc_lock);
-  inode_deny_write(inode);
-  lock_release(&inode->dwc_lock);
-
   /* prevents simultaneous change of readers */
-  lock_acquire(&inode->rmutex);
-  if(++(inode->readers) == 1)
-    sema_down(&inode->write_sema);
-  lock_release(&inode->rmutex);
+  lock_acquire(&inode->r_in);
+  ++(inode->readers);
+  lock_release(&inode->r_in);
 
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
@@ -289,15 +287,12 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
     }
   free (bounce);
 
-  /* prevents simultaneous change of deny_write_cnt */
-  lock_acquire(&inode->rmutex);
-  if (--(inode->readers) == 0)
+  /* prevents simultaneous change of readers */
+  lock_acquire(&inode->r_out);
+  --(inode->readers);
+  if (inode->read_wait && inode->readers == 0)
     sema_up(&inode->write_sema);
-  lock_release(&inode->rmutex);
-
-  lock_acquire(&inode->dwc_lock);
-  inode_allow_write(inode);
-  lock_release(&inode->dwc_lock);
+  lock_release(&inode->r_out);
 
   return bytes_read;
 }
@@ -311,16 +306,23 @@ off_t
 inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)
 {
-  sema_down(&inode->write_sema);           //guarantees mutual exclusion
+  lock_acquire(&inode->r_in);                    //prevent new readers
+  lock_acquire(&inode->r_out);                   //prevent readers from leaving
+  if (inode->readers == 0)
+    lock_release(&inode->r_out);                 //allow readers to leave
+  else {
+      inode->read_wait = true;                  //tell readers a writer is waiting
+      lock_release(&inode->r_out);               //allow readers to leave
+      sema_down(&inode->write_sema);            //wait for all readers to leave
+      inode->read_wait = false;                 //no writers waiting anymore
+  }
 
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
 
-  lock_acquire(&inode->dwc_lock);
   if (inode->deny_write_cnt) {
     sema_up(&inode->write_sema);
-    lock_release(&inode->dwc_lock);
     return 0;
   }
   while (size > 0)
@@ -372,8 +374,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     }
   free (bounce);
 
-  sema_up(&inode->write_sema);               //release writing resource
-  lock_release(&inode->dwc_lock);
+  lock_release(&inode->r_in);           //release r_in to allow readers again
 
   return bytes_written;
 }
