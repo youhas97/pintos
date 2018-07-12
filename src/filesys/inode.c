@@ -136,9 +136,9 @@ inode_open (disk_sector_t sector)
   inode = malloc (sizeof *inode);
 
   lock_init(&inode->oc_lock);
-  //lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
+  lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
   if (inode == NULL) {
-    //lock_release(&inode->oc_lock);
+    lock_release(&inode->oc_lock);
     return NULL;
   }
 
@@ -154,7 +154,7 @@ inode_open (disk_sector_t sector)
   inode->removed = false;
   disk_read (filesys_disk, inode->sector, &inode->data);
 
-  //lock_release(&inode->oc_lock);
+  lock_release(&inode->oc_lock);
   return inode;
 }
 
