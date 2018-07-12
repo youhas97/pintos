@@ -359,11 +359,12 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       size -= chunk_size;
       offset += chunk_size;
       bytes_written += chunk_size;
+
+      lock_release(&inode->dwc_lock);
     }
   free (bounce);
 
   sema_up(&inode->write_sema);               //release writing resource
-  lock_release(&inode->dwc_lock);
 
   return bytes_written;
 }
