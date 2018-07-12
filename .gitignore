@@ -54,3 +54,7 @@ dkms.conf
 # Build folders
 src/threads/build/*
 src/userprog/build/*
+
+# Make.tests and Make.vars
+src/userprog/Make.vars
+src/tests/userprog/Make.tests
