@@ -129,12 +129,12 @@ int write (int fd, const void *buffer, unsigned size){
             putbuf((char*)buffer, size);
             return size;
         }
-
+        printf("test1\n");
         struct thread *t = thread_current();
         if (fd >= OFFSET && fd < MAX_FILES + OFFSET) {
             struct file *file_ptr = t->files[fd-OFFSET];
-
-            //if (file_ptr)
+            printf("test2\n");
+            if (file_ptr)
                 return file_write(file_ptr, buffer, size);
         }
     }
