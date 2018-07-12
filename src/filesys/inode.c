@@ -302,6 +302,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)
 {
   sema_down(&inode->write_sema);           //guarantees mutual exclusion
+  lock_init(&inode->dwc_lock);
 
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
@@ -309,6 +310,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
   if (inode->deny_write_cnt) {
     sema_up(&inode->write_sema);
+    lock_release(&inode->dwc_lock);
     return 0;
   }
   while (size > 0)
@@ -361,6 +363,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   free (bounce);
 
   sema_up(&inode->write_sema);               //release writing resource
+  lock_release(&inode->dwc_lock);
 
   return bytes_written;
 }
