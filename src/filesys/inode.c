@@ -39,7 +39,6 @@ struct inode
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
 
-    int readers;
     struct semaphore write_sema;       /* lock for reading/writing */
     struct lock dwc_lock;              /* deny_write_cnt lock */
     struct lock oc_lock;               /* lock for opening/closing */
@@ -149,7 +148,6 @@ inode_open (disk_sector_t sector)
   sema_init(&inode->write_sema, 1);
   lock_init(&inode->dwc_lock);
   lock_init(&inode->open_cnt_lock);
-  inode->readers = 0;
 
   inode->sector = sector;
   inode->open_cnt = 1;
@@ -233,9 +231,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
   /* prevents simultaneous change of deny_write_cnt */
   lock_acquire(&inode->dwc_lock);
-  if (++(inode->readers) == 1)
-    sema_down(&inode->write_sema);
   inode_deny_write(inode);
+  if (inode->deny_write_cnt == 1)
+      sema_down(&inode->write_sema);    //guarantees no writing while reading
   lock_release(&inode->dwc_lock);
 
   uint8_t *buffer = buffer_;
@@ -286,9 +284,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 
   /* prevents simultaneous change of deny_write_cnt */
   lock_acquire(&inode->dwc_lock);
-  if(--(inode->readers) == 0)
-    sema_up(&inode->write_sema);
   inode_allow_write(inode);
+  if(inode->deny_write_cnt == 0)
+    sema_up(&inode->write_sema);        //guarantees no readers if writing
   lock_release(&inode->dwc_lock);
 
   return bytes_read;
@@ -303,6 +301,8 @@ off_t
 inode_write_at (struct inode *inode, const void *buffer_, off_t size,
                 off_t offset)
 {
+
+
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
@@ -363,8 +363,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
     }
   free (bounce);
 
-  sema_up(&inode->write_sema);               //release writing access
   lock_release(&inode->dwc_lock);
+  sema_up(&inode->write_sema);               //release writing access
 
   return bytes_written;
 }
