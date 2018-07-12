@@ -134,7 +134,7 @@ inode_open (disk_sector_t sector)
         }
     }
 
-  lock_acquire(inode->oc_lock);         //prevent simultaneous opening
+  lock_acquire(&inode->oc_lock);         //prevent simultaneous opening
   /* Allocate memory. */
   inode = malloc (sizeof *inode);
   if (inode == NULL) {
